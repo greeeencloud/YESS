@@ -1,0 +1,80 @@
+#include <Wire.h> 
+#include <Servo.h> 
+#include <NewPing.h> 
+unsigned long rxTime; 
+unsigned long RX_filter; 
+int distance;
+int i=0;
+int deviate= -5; 
+Servo myservo;
+
+
+#define TRIGGER_PIN 3   // trig pin on the ultrasonic sensor attach to pin2 . 
+#define ECHO_PIN 4    // echo pin on the ultrasonic sensor attach to pin3.
+#define MAX_DISTANCE 400  // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
+
+
+NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);   // NewPing setup of pins and maximum distance.
+#define ENA_PIN 5   // ENA of DC motor driver module attach to pin5 of sunfounder uno board
+#define ENB_PIN 6   // ENB of DC motor driver moduleattach to pin6 of sunfounder uno board
+#define MOTOR_L_1 8   // left MOTOR_L_1 attach to pin8
+#define MOTOR_L_2 9   // left MOTOR_L_2 attach to pin9
+#define MOTOR_R_1 10  //right MOTOR_R_1 attach to pin10 
+#define MOTOR_R_2 11 //right MOTOR_R_2 attach to pin11
+
+
+#define FORWARD 0 //define forward=0,car move forward 
+#define BACK 1 //define back=1,car move back 
+//#define BREAK 3 //멈춤
+
+
+#define SPEED 160 //define SPEED=180,it is the rotate speed of motor
+
+
+#define ANGLE_RIGHT_MAX 110+deviate //define ANGLE_RIGHT_MAX=120,it is the rotate angle of servo
+#define ANGLE_RIGHT_HALF 110+deviate
+#define ANGLE_LEFT_MAX 70+deviate
+#define ANGLE_LEFT_HALF 70+deviate
+#define ANGLE_MIDDLE 90+deviate
+
+
+#define sigPin 7  //인체감지센서 시그널핀넘버 
+int pirState=LOW;   //감지센서 초기상태
+int val=0;  //signal 입력값
+
+
+unsigned char angle = 90+deviate;
+
+
+void setup() 
+{
+  Serial.begin(115200);
+  pinMode(ENA_PIN, OUTPUT);
+  pinMode(ENB_PIN, OUTPUT);
+  pinMode(MOTOR_L_1, OUTPUT); 
+  pinMode(MOTOR_L_2, OUTPUT); 
+  pinMode(MOTOR_R_1, OUTPUT); 
+  pinMode(MOTOR_R_2, OUTPUT);
+  pinMode(sigPin, INPUT); //인체감지센서 input설정 
+  myservo.attach(2);  //servo attach to pin2 
+  myservo.write(angle); //set the angle of servo
+  CAR_move(FORWARD,SPEED,SPEED);  //car move forward with speed 180 
+}
+
+void loop() 
+{
+  delay(100);   // Wait 100ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
+  unsigned int uS = sonar.ping(); // Send ping, get ping time in microseconds (uS).
+  distance=uS/US_ROUNDTRIP_CM;
+  val = digitalRead(sigPin);  //센서값 읽기
+  Serial.println(distance);
+  
+  if((distance<50)&&(distance>0)) {
+  CAR_move(FORWARD,SPEED,SPEED);
+  angle = ANGLE_RIGHT_MAX ;   //servo rotate to 120 
+  myservo.write(angle);
+  delay(600);
+  CAR_move(BACK,SPEED,SPEED);
+  angle = ANGLE_LEFT_MAX;   //servo rotate to 60
+  } 
+}
